@@ -29,7 +29,7 @@ class DateTimeUtils():
     allowed_year_prefixes = ['in', 'on', 'year', 'late', 'early']
 
     @staticmethod
-    def isMonth(word: str):
+    def getMonth(word: str):
         word = word.lower()
         if word in DateTimeUtils.months:
             return DateTimeUtils.months[word]
@@ -37,8 +37,8 @@ class DateTimeUtils():
             return None
 
     @staticmethod
-    def isYear(word: str, prev_word):
-        if (prev_word == True
+    def getYear(word: str, prev_word):
+        if (prev_word is None
                 or prev_word in DateTimeUtils.allowed_year_prefixes
                 or prev_word.lower() in list(DateTimeUtils.months.keys())):
             if word.isnumeric() and int(word) < 2018 and int(word) > 1100:
@@ -49,9 +49,8 @@ class DateTimeUtils():
             return None
 
     @staticmethod
-    def isDate(word):
-        if word.endswith('th') or word.endswith('st') or word.endswith(
-                'nd') or word.endswith('rd'):
+    def getDate(word):
+        if word.endswith('st') or word.endswith('nd') or word.endswith('rd') or word.endswith('th'):
             word = word[:-2]
         if word.isnumeric() and int(word) < 32 and int(word) > 0:
             return int(word)
