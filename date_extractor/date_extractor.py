@@ -3,32 +3,25 @@ import re
 
 
 class DateExtractor():
-    def __init__(self):
-        self._words = []
-        self._potential_dates = []
 
-    def extract_dates(self, text: str):
-
-        # re-initialize the variables
-        self._words = []
-        self._potential_dates = []
+    def extract_dates(self, text):
 
         # split the text into words
-        self._words = re.findall(r"[\w']+", text)
+        words = re.findall(r"[\w']+", text)
 
         # tag the words as potential date/month/year
-        self._tag_words()
+        potential_dates = self._tag_words(words)
 
         # extract dates_to_return
         dates_to_return = []
         processed_list = []
         current_year = None
-        for i, curr in enumerate(self._potential_dates):
+        for i, curr in enumerate(potential_dates):
             if curr in processed_list:
                 continue
 
-            n1 = self._get_next_valid_tag(i)
-            n2 = self._get_next_valid_tag(i + 1)
+            n1 = self._get_next_valid_tag(i, words, potential_dates)
+            n2 = self._get_next_valid_tag(i + 1, words, potential_dates)
 
             # (d, m, y)
             if curr['type'] == 'd' and n1 is not None and n1['type'] == 'm' and n2 is not None and n2['type'] == 'y':
@@ -107,11 +100,23 @@ class DateExtractor():
 
         return dates_to_return
 
-    def _tag_words(self):
-        for i, word in enumerate(self._words):
-            monthNo = DateTimeUtils.isMonth(word)
+    def _tag_words(self, words):
+    
+        potential_dates = [];
+    
+        for i, word in enumerate(words):
+
+            if (i > 0):
+                prev_word = words[i - 1]
+            else:
+                prev_word = None
+
+            dayNo = DateTimeUtils.getDate(word)
+            monthNo = DateTimeUtils.getMonth(word)
+            yearNo = DateTimeUtils.getYear(word, prev_word)
+
             if monthNo is not None:
-                self._potential_dates.append({
+                potential_dates.append({
                     'index': i,
                     'word': word,
                     'type': 'm',
@@ -119,35 +124,31 @@ class DateExtractor():
                 })
                 continue
 
-            if (i > 0):
-                prev_word = self._words[i - 1]
-            else:
-                prev_word = True
-            yearNo = DateTimeUtils.isYear(word, prev_word)
             if yearNo is not None:
-                self._potential_dates.append({
+                potential_dates.append({
                     'index': i,
                     'word': word,
                     'type': 'y',
                     'val': yearNo
                 })
                 continue
-            dayNo = DateTimeUtils.isDate(word)
+
             if dayNo is not None:
-                self._potential_dates.append({
+                potential_dates.append({
                     'index': i,
                     'word': word,
                     'type': 'd',
                     'val': dayNo
                 })
                 continue
+        return potential_dates
 
-    def _get_next_valid_tag(self, index):
-        if index < len(self._potential_dates) - 1:
-            tag = self._potential_dates[index]
+    def _get_next_valid_tag(self, index, words, potential_dates):
+        if index < len(potential_dates) - 1:
+            tag = potential_dates[index]
             word_index = tag['index']
-            next_word = self._words[word_index + 1]
-            next_tag = self._potential_dates[index + 1]
+            next_word = words[word_index + 1]
+            next_tag = potential_dates[index + 1]
             if next_tag['index'] == word_index + 1:
                 return next_tag
             else:
